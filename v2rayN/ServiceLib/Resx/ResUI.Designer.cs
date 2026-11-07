@@ -1823,6 +1823,15 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("menuSortServerResult", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   查找类似 Hide failed servers (delay -1) 的本地化字符串。
+        /// </summary>
+        public static string menuHideFailedServers {
+            get {
+                return ResourceManager.GetString("menuHideFailedServers", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   查找类似 Test download speed 的本地化字符串。

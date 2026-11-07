@@ -501,6 +501,9 @@
   <data name="menuSortServerResult" xml:space="preserve">
     <value>Sort by test result</value>
   </data>
+  <data name="menuHideFailedServers" xml:space="preserve">
+    <value>Hide failed servers (delay -1)</value>
+  </data>
   <data name="menuSpeedServer" xml:space="preserve">
     <value>Test download speed</value>
   </data>

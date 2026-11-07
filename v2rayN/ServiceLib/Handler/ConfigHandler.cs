@@ -1725,7 +1725,10 @@ public static class ConfigHandler
 
         var countServers = 0;
         List<ProfileItem> lstAdd = [];
-        var arrData = strData.Split(Environment.NewLine.ToCharArray()).Where(t => !t.IsNullOrEmpty());
+        // Split on any newline convention (\r\n, \n, \r) regardless of OS: subscription files
+        // served with LF-only endings must also parse on Windows and vice versa
+        var arrData = strData.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(t => !t.IsNullOrEmpty());
         if (isSub)
         {
             arrData = arrData.Distinct();
@@ -2144,6 +2147,8 @@ public static class ConfigHandler
         {
             return -1;
         }
+        // Strip a UTF-8 BOM some subscription servers prepend, otherwise the first line is not recognized as a share link
+        strData = strData.TrimStart('\uFEFF');
         List<ProfileItem>? lstOriSub = null;
         ProfileItem? activeProfile = null;
         if (isSub && subid.IsNotEmpty())

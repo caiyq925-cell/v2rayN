@@ -42,6 +42,9 @@ public partial class ProfilesViewModel : MyReactiveObject
     [Reactive]
     public partial string ServerFilter { get; set; }
 
+    [Reactive]
+    public partial bool HideFailedServers { get; set; }
+
     #endregion ObservableCollection
 
     #region Menu
@@ -112,6 +115,11 @@ public partial class ProfilesViewModel : MyReactiveObject
         this.WhenAnyValue(x => x.ServerFilter)
             .Where(y => y != null && _serverFilter != y)
             .SubscribeAsync(async _ => await ServerFilterChanged());
+
+        HideFailedServers = _config.GuiItem.HideFailedServers;
+        this.WhenAnyValue(x => x.HideFailedServers)
+            .Where(y => y != _config.GuiItem.HideFailedServers)
+            .SubscribeAsync(async y => await HideFailedServersChanged(y));
 
         //servers delete
         EditServerCmd = ReactiveCommand.CreateFromTask(async () =>
@@ -349,6 +357,13 @@ public partial class ProfilesViewModel : MyReactiveObject
         }
     }
 
+    private async Task HideFailedServersChanged(bool hide)
+    {
+        _config.GuiItem.HideFailedServers = hide;
+        await ConfigHandler.SaveConfig(_config);
+        await RefreshServers();
+    }
+
     public async Task RefreshServers()
     {
         RefreshServersRequested.Publish();
@@ -432,6 +447,12 @@ public partial class ProfilesViewModel : MyReactiveObject
                         TotalDown = t22 == null ? "" : Utils.HumanFy(t22.TotalDown),
                         TotalUp = t22 == null ? "" : Utils.HumanFy(t22.TotalUp)
                     }).OrderBy(t => t.Sort).ToList();
+
+        if (_config.GuiItem.HideFailedServers)
+        {
+            // Hide servers whose last delay test failed (Delay == -1); untested servers (Delay == 0) stay visible
+            lstModel = lstModel.Where(t => t.Delay != -1).ToList();
+        }
 
         return lstModel;
     }
@@ -731,6 +752,7 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     public async Task ServerSpeedtest(ESpeedActionType actionType)
     {
+        var isRealPing = actionType is ESpeedActionType.Realping or ESpeedActionType.FastRealping;
         List<ProfileItem>? lstSelected;
         if (actionType is ESpeedActionType.Mixedtest or ESpeedActionType.FastRealping)
         {
@@ -759,7 +781,32 @@ public partial class ProfilesViewModel : MyReactiveObject
             });
             await Task.CompletedTask;
         });
-        _speedtestService?.RunLoop(actionType, lstSelected);
+        var runTask = _speedtestService?.RunLoop(actionType, lstSelected);
+        if (isRealPing && runTask != null)
+        {
+            _ = runTask.ContinueWith(async _ => await OnRealPingTestCompleted(), TaskScheduler.Default);
+        }
+    }
+
+    private async Task OnRealPingTestCompleted()
+    {
+        // After a real delay test: sort by delay ascending and hide the failed (-1) servers
+        await ConfigHandler.SortServers(_config, _config.SubIndexId, nameof(EServerColName.DelayVal), true);
+        _dicHeaderSort[nameof(EServerColName.DelayVal)] = false;
+
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
+        {
+            if (HideFailedServers)
+            {
+                _ = RefreshServers();
+            }
+            else
+            {
+                // Triggers HideFailedServersChanged, which saves the setting and refreshes the list
+                HideFailedServers = true;
+            }
+        });
+        await Task.CompletedTask;
     }
 
     public void ServerSpeedtestStop()

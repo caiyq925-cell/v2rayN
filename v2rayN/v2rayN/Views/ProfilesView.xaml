@@ -172,6 +172,11 @@
                             x:Name="menuSortServerResult"
                             Height="{StaticResource MenuItemHeight}"
                             Header="{x:Static resx:ResUI.menuSortServerResult}" />
+                        <MenuItem
+                            x:Name="menuHideFailedServers"
+                            Height="{StaticResource MenuItemHeight}"
+                            Header="{x:Static resx:ResUI.menuHideFailedServers}"
+                            IsCheckable="True" />
                         <Separator />
                         <MenuItem
                             x:Name="menuMoveToGroup"

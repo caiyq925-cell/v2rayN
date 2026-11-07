@@ -501,6 +501,9 @@
   <data name="menuSortServerResult" xml:space="preserve">
     <value>按測試結果排序</value>
   </data>
+  <data name="menuHideFailedServers" xml:space="preserve">
+    <value>不顯示 -1（隱藏延遲失敗的伺服器）</value>
+  </data>
   <data name="menuSpeedServer" xml:space="preserve">
     <value>測試速度 (多選)</value>
   </data>
